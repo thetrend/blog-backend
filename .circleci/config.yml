@@ -1,13 +1,9 @@
 # This config is equivalent to both the '.circleci/extended/orb-free.yml' and the base '.circleci/config.yml'
-version: 2
-defaults:
-  working_directory: ~/project
-  docker:
-  - image: circleci/node:latest
-
+version: 2.1
 jobs:
   setup:
-    <<: *defaults
+    docker:
+      - image: cimg/node:18.16.1
     steps:
     - checkout
     - restore_cache:
@@ -23,9 +19,9 @@ jobs:
         root: ~/project
         paths:
         - node_modules
-
   lint_commit_message:
-    <<: *defaults
+    docker:
+      - image: cimg/node:18.16.1
     steps:
     - checkout
     - attach_workspace:
@@ -40,7 +36,6 @@ jobs:
         command: echo "$COMMIT_MESSAGE" | npx commitlint
 
 workflows:
-  version: 2
   commit:
     jobs:
     - setup
