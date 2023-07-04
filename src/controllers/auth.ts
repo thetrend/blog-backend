@@ -1,4 +1,5 @@
 import { NextFunction, Request, Response } from 'express';
+import bcrypt from 'bcryptjs';
 import { Prisma } from '@prisma/client';
 import { omit } from 'lodash';
 import { RegisterUserInput } from '../schemas/user';
@@ -10,10 +11,11 @@ export const registerUserHandler = async (
   next: NextFunction
 ) => {
   try {
+    const hashedPassword = await bcrypt.hash(req.body.password, 20);
     const user = await createUser({
       name: req.body.name,
       email: req.body.email.toLowerCase(),
-      password: req.body.password,
+      password: hashedPassword,
     });
     const newUser = omit(user, excludedFields);
     res.status(201).json({
