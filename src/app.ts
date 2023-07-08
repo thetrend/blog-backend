@@ -7,6 +7,7 @@ import helmet from 'helmet';
 import redisClient from './utils/redis';
 import authRouter from './routes/auth';
 import userRouter from './routes/user';
+import categoryRouter from './routes/category';
 import AppError from './utils/error';
 import cookieParser from 'cookie-parser';
 import morgan from 'morgan';
@@ -46,6 +47,7 @@ const bootstrap = async () => {
 
   app.use('/api/auth', authRouter);
   app.use('/api/users', userRouter);
+  app.use('/api/categories', categoryRouter);
 
   app.all('*', (req: Request, res: Response, next: NextFunction) => {
     next(new AppError(404, `Route ${req.originalUrl} not found`));
