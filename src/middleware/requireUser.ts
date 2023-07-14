@@ -10,10 +10,11 @@ export const requireUser = (
     const user = res.locals.user;
 
     if (!user) {
-      return next(
+      next(
         new AppError(401, 'Session has expired')
       );
     }
+    next();
   } catch (error: any) {
     next(error);
   }
