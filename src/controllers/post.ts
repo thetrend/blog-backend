@@ -85,16 +85,16 @@ export const UpdatePostHandler = async (
 };
 
 export const DeletePostHandler = async (
-  req: Request<{ id: string; }>,
+  req: Request,
   res: Response,
   next: NextFunction
 ) => {
   try {
     const post = await deletePost(parseInt(req.params.id));
-    res.status(200).json({
+    res.json({
       data: {
-        id: req.params.id,
         deleted: true,
+        post
       }
     })
   } catch (error: any) {
