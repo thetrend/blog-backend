@@ -14,7 +14,6 @@ export const requireUser = (
         new AppError(401, 'Session has expired')
       );
     }
-    next();
   } catch (error: any) {
     next(error);
   }

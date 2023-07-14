@@ -1,4 +1,4 @@
-import { boolean, number, object, string, TypeOf, z } from 'zod';
+import { boolean, number, object, string, TypeOf } from 'zod';
 
 export const createCategorySchema = object({
   body: object({
@@ -10,6 +10,7 @@ export const createCategorySchema = object({
     private: boolean({
       required_error: 'Private must either be true or false',
     }),
+    
   }),
 });
 

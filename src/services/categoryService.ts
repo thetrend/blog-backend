@@ -17,7 +17,7 @@ export const getCategoryByID = async (
 };
 
 export const getAllCategories = async () => {
-  return (await prisma.category.findMany());
+  return (await prisma.category.findMany()) as Category[];
 };
 
 export const updateCategory = async (
@@ -27,5 +27,5 @@ export const updateCategory = async (
   return (await prisma.category.update({
     where: { id },
     data: input
-  }));
+  })) as Category;
 };
