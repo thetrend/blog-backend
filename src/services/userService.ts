@@ -17,7 +17,7 @@ export const findUniqueUser = async (
   where: Prisma.UserWhereUniqueInput,
   select?: Prisma.UserSelect
 ) => {
-  return (await prisma.user.findUnique({
+  return (await prisma.user.findUniqueOrThrow({
     where,
     select,
   })) as User;

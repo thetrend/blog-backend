@@ -1,5 +1,5 @@
 import { CookieOptions, NextFunction, Request, Response } from 'express';
-import bcrypt from 'bcryptjs';
+import bcrypt from 'bcrypt';
 import { Prisma } from '@prisma/client';
 import { omit } from 'lodash';
 import { LoginUserInput, RegisterUserInput } from '../schemas/user';
@@ -37,7 +37,7 @@ export const registerUserHandler = async (
   next: NextFunction
 ) => {
   try {
-    const hashedPassword = await bcrypt.hash(req.body.password, 20);
+    const hashedPassword = await bcrypt.hash(req.body.password, 12);
     const user = await createUser({
       name: req.body.name,
       email: req.body.email.toLowerCase(),
@@ -81,7 +81,13 @@ export const loginUserHandler = async (
       { id: true, email: true, password: true, }
     );
 
-    if (!user || !(await bcrypt.compare(password, user.password))) {
+    if (!user) {
+      return next(new AppError(400, 'Invalid email or password'));
+    }
+
+    const checkPassword = bcrypt.compareSync(password, user.password);
+
+    if (!checkPassword) {
       return next(new AppError(400, 'Invalid email or password'));
     }
 

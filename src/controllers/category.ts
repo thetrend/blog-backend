@@ -78,7 +78,7 @@ export const UpdateCategoryHandler = async (
 ) => {
   try {
     const category = await updateCategory(parseInt(req.params.id), req.body);
-    res.status(201).json({
+    res.status(200).json({
       data: {
         category,
       }
@@ -96,8 +96,8 @@ export const UpdateCategoryHandler = async (
             message: 'Category already exists.'
           }]
         });
-        next(error);
       }
     }
+    next(error);
   }
 };
