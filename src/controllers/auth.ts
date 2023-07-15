@@ -1,12 +1,16 @@
 import { CookieOptions, NextFunction, Request, Response } from 'express';
 import bcrypt from 'bcrypt';
 import { Prisma } from '@prisma/client';
+import ShortUniqueId from 'short-unique-id';
+import generator from 'generate-password';
 import { omit } from 'lodash';
 import { LoginUserInput, RegisterUserInput } from '../schemas/user';
-import { createUser, excludedFields, findUniqueUser, signTokens } from '../services/userService';
+import { createUser, excludedFields, findUniqueUser, signTokens, updateUser } from '../services/userService';
 import AppError from '../utils/error';
 import { signJwt, verifyJwt } from '../utils/jwt';
 import redisClient from '../utils/redis';
+import { createResetToken, retrieveResetToken, updateResetToken } from '../services/resetTokenService';
+import { sendEmail } from '../utils/email';
 
 const cookiesOptions: CookieOptions = {
   httpOnly: true,
@@ -20,7 +24,7 @@ const accessTokenCookieOptions: CookieOptions = {
   expires: new Date(
     Date.now() + 15 * 60 * 1000,
   ),
-    maxAge: 15 * 60 * 1000,
+  maxAge: 15 * 60 * 1000,
 };
 
 const refreshTokenCookieOptions: CookieOptions = {
@@ -121,7 +125,7 @@ export const refreshAccessTokenHandler = async (
       return next(new AppError(403, message));
     }
 
-    const decoded = verifyJwt<{ sub: string }>(refresh_token);
+    const decoded = verifyJwt<{ sub: string; }>(refresh_token);
 
     if (!decoded) {
       return next(new AppError(403, message));
@@ -134,7 +138,7 @@ export const refreshAccessTokenHandler = async (
     }
 
     const user = await findUniqueUser({ id: JSON.parse(session!).id });
-    
+
     if (!user) {
       return next(new AppError(403, message));
     }
@@ -176,4 +180,103 @@ export const logoutUserHandler = async (
   } catch (error: any) {
     next(error);
   }
-}
+};
+
+export const forgotPasswordHandler = async (
+  req: Request<{}, {}, { email: string }>,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const email = req.body.email.toLowerCase();
+    const foundUser = await findUniqueUser({ email });
+    if (foundUser) {
+      const token = new ShortUniqueId({ length: 10 })();
+      const createEntry = await createResetToken({
+        email,
+        token,
+        expiry: new Date(new Date().getTime() + (60 * 60 * 1000)), // expires in 1 hour
+      });
+      if (createEntry) {
+        const send = await sendEmail({
+          to: email,
+          subject: 'blog.graced.is - Forgot Password',
+          html: `<p>Hi there!</p>
+          <p><strong>blog.graced.is</strong> received a request to reset your password!</p>
+          <p><a href="https://blog.graced.is/password/reset?token=${token}&email=${email}">Click Here to reset your password</a>.</p>
+          <h2>${token}</h2>
+          <p>If you didn't request to reset your password, disregard this email.</p>
+          <p>Have a nice day!</p>`
+        });
+        console.log(`Email sent`, send);
+      }
+    }
+    res.status(200).json({
+      message: "A link to reset your password has been sent to your email if an account exists.",
+    });
+} catch (error: any) {
+    next(error)
+  }
+};
+
+export const resetPasswordHandler = async (
+  req: Request<{}, {}, { token: string; email: string; }>,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { token, email } = req.body;
+
+    const foundToken = await retrieveResetToken({ token, email: email.toLowerCase() });
+
+    if (!foundToken) {
+      res.status(200).json({
+        data: {
+          token: null,
+        }
+      })
+    }
+
+    const updateToken = await updateResetToken({ token });
+
+    const generatedPassword = generator.generate({
+      length: 20,
+      numbers: true,
+      symbols: true,
+      strict: true,
+    });
+    
+    const hashedPassword = await bcrypt.hash(generatedPassword, 12);
+
+    const userID = (await findUniqueUser({ email })).id;
+
+    const updateUserPassword = await updateUser(userID, { password: hashedPassword });
+
+    const send = await sendEmail({
+      to: email,
+      subject: 'blog.graced.is - Password Reset Requested',
+      html: `<h1>${generatedPassword}</h1>
+      <p>You recently requested a temporary password on <b>blog.graced.is</b>.</p>
+      <p>Make sure you reset your password after you <a href="https://blog.graced.is/login">log in!</a></p>
+      <p>If you didn't request to reset your password, contact <a href="mailto:blog@graced.is">blog@graced.is</a>.
+      <p>Have a nice day!</p>`
+    });
+
+    const user = omit(updateUserPassword, excludedFields);
+
+    console.log(new Date(), ` - Token updated to used status.\n updateToken:`, updateToken);
+    console.log(new Date(), ` - Email sent to ${email.toLowerCase()}.\n send:`, send);
+    console.log(new Date(), ` - Password updated for user ID ${userID}.\n user:`, user);
+
+    res.status(200).json({
+      data: {
+        token,
+        used: true,
+        deliveredTo: email.toLowerCase(),
+        user,
+      }
+    });
+  } catch (error: any) {
+    next(error);
+  }
+};
