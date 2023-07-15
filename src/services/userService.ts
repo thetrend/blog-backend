@@ -36,3 +36,13 @@ export const signTokens = async (user: Prisma.UserUncheckedCreateInput) => {
 
   return { access_token, refresh_token };
 };
+
+export const updateUser = async (
+  id: number,
+  input: Prisma.UserUpdateInput
+) => {
+  return (await prisma.user.update({
+    where: { id },
+    data: input
+  }))
+};
