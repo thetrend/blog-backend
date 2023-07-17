@@ -22,6 +22,7 @@ export const updatePostSchema = object({
   body: object({
     id: number({}),
     title: string({}),
+    slug: string({}),
     content: string({}),
     published: boolean({}),
     private: boolean({}),
