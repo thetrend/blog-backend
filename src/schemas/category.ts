@@ -17,6 +17,7 @@ export const updateCategorySchema = object({
   body: object({
     id: number({}),
     name: string({}),
+    slug: string({}),
     private: boolean({}),
   })
     .partial()
