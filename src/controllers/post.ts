@@ -11,8 +11,6 @@ export const CreatePostHandler = async (
   try {
     const countUntitledPosts = (await countAllUntitledPosts());
 
-    console.log('count untitled posts', countUntitledPosts);
-
     const post = await createPost({
       title: req.body.title,
       content: req.body.content,
