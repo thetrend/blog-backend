@@ -1,14 +1,9 @@
-import { createClient } from 'redis';
+import { Redis } from 'ioredis';
 
-const redisUrl = 'redis://localhost:6379';
-
-const redisClient = createClient({
-  url: redisUrl,
-});
+const redisClient = new Redis(6379);
 
 const connectRedis = async () => {
   try {
-    await redisClient.connect();
     console.log('Redis client connected successfully!');
     redisClient.set('try', 'Welcome to Express + Prisma + Redis');
   } catch (error) {

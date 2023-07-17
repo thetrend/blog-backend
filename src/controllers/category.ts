@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from 'express';
-import { Prisma } from '@prisma/client';
+import convert from 'url-slug';
 import { CreateCategoryInput, UpdateCategoryInput } from '../schemas/category';
 import { createCategory, getCategoryByID, getAllCategories, updateCategory } from '../services/categoryService';
 
@@ -11,6 +11,7 @@ export const CreateCategoryHandler = async (
   try {
     const category = await createCategory({
       name: req.body.name,
+      slug: convert(req.body.name),
       private: req.body.private,
     });
     res.status(201).json({
@@ -19,21 +20,7 @@ export const CreateCategoryHandler = async (
       }
     });
   } catch (error: any) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      if (error.code === 'P2002') {
-        return res.status(409).json({
-          errors: [{
-            code: 'custom',
-            path: [
-              'body',
-              'name',
-            ],
-            message: 'Category already exists.'
-          }]
-        });
-        next(error);
-      }
-    }
+    next(error);
   }
 };
 
@@ -84,20 +71,6 @@ export const UpdateCategoryHandler = async (
       }
     });
   } catch (error: any) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      if (error.code === 'P2002') {
-        return res.status(409).json({
-          errors: [{
-            code: 'custom',
-            path: [
-              'body',
-              'name',
-            ],
-            message: 'Category already exists.'
-          }]
-        });
-      }
-    }
     next(error);
   }
 };

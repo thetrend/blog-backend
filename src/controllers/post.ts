@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from 'express';
 import { CreatePostInput, UpdatePostInput } from '../schemas/post';
-import { createPost, deletePost, getAllPosts, getAllPublishedPublicPosts, getPostByID, updatePost } from '../services/postService';
+import { countAllUntitledPosts, createPost, deletePost, getAllPosts, getAllPublishedPublicPosts, getPostByID, updatePost } from '../services/postService';
+import convert from 'url-slug';
 
 export const CreatePostHandler = async (
   req: Request<{}, {}, CreatePostInput>,
@@ -8,10 +9,15 @@ export const CreatePostHandler = async (
   next: NextFunction
 ) => {
   try {
+    const countUntitledPosts = (await countAllUntitledPosts());
+
+    console.log('count untitled posts', countUntitledPosts);
+
     const post = await createPost({
       title: req.body.title,
       content: req.body.content,
       published: req.body.published,
+      slug: req.body.title ? convert(req.body.title) : `untitled-${countUntitledPosts + 1}`,
       author: {
         connect: {
           id: res.locals.user.id,
@@ -42,9 +48,12 @@ export const ReadAllPostsHandler = async (
     const isAuthenticated = Boolean(res.locals.user);
     const forceGuest = Boolean(req.query.g as string)
     const lastCursor = parseInt(req.query.c as string);
-    const data = (isAuthenticated || !forceGuest) ? await getAllPosts(lastCursor) : await getAllPublishedPublicPosts(lastCursor);
-    res.status(200).json({ data });
+    const posts = (isAuthenticated || !forceGuest) ? await getAllPosts(lastCursor) : await getAllPublishedPublicPosts(lastCursor);
+    res.status(200).json({ data: {
+      posts: posts ?? []
+    } });
   } catch (error) {
+    console.log(error);
     next(error);
   }
 };
@@ -55,7 +64,7 @@ export const ReadPostHandler = async (
   next: NextFunction
 ) => {
   try {
-    const isAuthenticated = Boolean(req.headers.authorization?.startsWith('Bearer'));
+    const isAuthenticated = Boolean(res.locals.user);
     const post = await(getPostByID({ id: parseInt(req.params.id) }));
     res.status(200).json({
       data: {
