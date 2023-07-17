@@ -16,6 +16,7 @@ model Post {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   title       String?  @db.VarChar(255)
+  slug        String   @unique @db.VarChar(255)
   content     String   @db.Text
   published   Boolean  @default(false)
   private     Boolean  @default(false)
@@ -27,7 +28,8 @@ model Post {
 
 model Category {
   id        Int       @id @default(autoincrement())
-  name      String    @unique
+  name      String    @db.VarChar(255)
+  slug      String    @unique @db.VarChar(255)
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   private   Boolean   @default(false)

@@ -67,12 +67,13 @@ const bootstrap = async () => {
   app.listen(port, () => {
     console.log(`⚡️ [server]: Server is running at http://localhost:${port}`);
   });
+
 };
 
 bootstrap()
-  .catch((error) => {
-    throw error;
-  })
-  .finally(async () => {
+.catch((error) => {
+  throw error;
+})
+.finally(async () => {
     await prisma.$disconnect();
   });

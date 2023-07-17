@@ -17,7 +17,7 @@ export const findUniqueUser = async (
   where: Prisma.UserWhereUniqueInput,
   select?: Prisma.UserSelect
 ) => {
-  return (await prisma.user.findUniqueOrThrow({
+  return (await prisma.user.findFirst({
     where,
     select,
   })) as User;
@@ -26,9 +26,7 @@ export const findUniqueUser = async (
 export const signTokens = async (user: Prisma.UserUncheckedCreateInput) => {
   const redisUser = omit(user, excludedFields);
   const userID = (redisUser.id)?.toString();
-  redisClient.set(`user_${userID}`, JSON.stringify(redisUser), {
-    EX: 60 * 60,
-  });
+  redisClient.set(`user_${userID}`, JSON.stringify(redisUser), 'EX', 60 * 60);
 
   const access_token = signJwt({ sub: userID }, '15m');
 

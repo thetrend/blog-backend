@@ -38,7 +38,7 @@ export const getAllPublishedPublicPosts = async (
     }
   }));
 
-  const lastPostID: number = query[query.length - 1].id;
+  const lastPostID: number = (query && query.length > 0) ? query[query.length - 1].id : 0;
 
   const nextPage = await (prisma.post.findMany({
     take: take ?? 5,
@@ -83,7 +83,7 @@ export const getAllPosts = async (
     }
   }));
 
-  const lastPostID: number = query[query.length - 1].id;
+  const lastPostID: number = (query && query.length > 0) ? query[query.length - 1].id : 0;
 
   const nextPage = await (prisma.post.findMany({
     take: take ?? 5,
@@ -123,6 +123,15 @@ export const deletePost = async (
   return (await prisma.post.delete({
     where: {
       id
+    }
+  }));
+};
+
+export const countAllUntitledPosts = async (
+) => {
+  return (await prisma.post.count({
+    where: {
+      title: null
     }
   }));
 };
