@@ -4,7 +4,7 @@ import { Prisma } from '@prisma/client';
 import ShortUniqueId from 'short-unique-id';
 import generator from 'generate-password';
 import { omit } from 'lodash';
-import { LoginUserInput, RegisterUserInput } from '../schemas/user';
+import { LoginUserInput, RegisterUserInput, UpdateUserInput } from '../schemas/user';
 import { createUser, excludedFields, findUniqueUser, signTokens, updateUser } from '../services/userService';
 import AppError from '../utils/error';
 import { signJwt, verifyJwt } from '../utils/jwt';
@@ -276,6 +276,42 @@ export const resetPasswordHandler = async (
         user,
       }
     });
+  } catch (error: any) {
+    next(error);
+  }
+};
+
+export const updateUserHandler = async (
+  req: Request<{ id: string; }, {}, Prisma.UserUpdateInput>,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const authenticatedUser = res.locals.user;
+    const queriedUser = parseInt(req.params.id);
+    if (
+      res.locals.user.role !== 'admin' && 
+      parseInt(authenticatedUser.id) !== queriedUser
+    ) {
+      return next(new AppError(403, 'Cannot edit another user'));
+    }
+
+    if (
+      authenticatedUser.role !== 'admin' ||
+      (
+        parseInt(authenticatedUser.id) === queriedUser &&
+        (req.body.role && req.body.role !== 'admin')
+      )
+    ) {
+      delete req.body.role;
+    }
+
+    const user = await updateUser(parseInt(req.params.id), req.body);
+    res.status(200).json({
+      data: {
+        user: omit(user, excludedFields),
+      }
+    })
   } catch (error: any) {
     next(error);
   }
